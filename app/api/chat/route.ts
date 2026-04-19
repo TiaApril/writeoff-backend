@@ -1,20 +1,7 @@
-import { getApiKeys } from "@/lib/config";
-import { chatAboutExpenses } from "@/lib/claude";
-import type { ExpenseRecord } from "@/lib/claude";
+import { chatAboutExpenses } from "@/lib/groq";
+import type { ExpenseRecord } from "@/lib/groq";
 
 export async function POST(request: Request) {
-  // Check API key
-  let apiKey: string;
-  try {
-    const keys = getApiKeys(["anthropic"]);
-    apiKey = keys.anthropicApiKey;
-  } catch {
-    return Response.json(
-      { error: "Server configuration error: ANTHROPIC_API_KEY is not set" },
-      { status: 500 },
-    );
-  }
-
   // Parse body
   let body: Record<string, any>;
   try {
@@ -26,13 +13,10 @@ export async function POST(request: Request) {
     );
   }
 
-  console.log("Chat request body:", JSON.stringify(body));
-
   const question = body.question || body.message || body.query;
   let expenseData: ExpenseRecord[] =
     body.expenseData || body.records || body.data || [];
 
-  // If no expense data provided, give Claude general context
   if (expenseData.length === 0) {
     expenseData = [
       {
@@ -51,16 +35,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // Call Claude
   try {
-    const answer = await chatAboutExpenses(apiKey, question, expenseData);
+    const answer = await chatAboutExpenses(question, expenseData);
     return new Response(answer, {
       status: 200,
       headers: { "Content-Type": "text/plain" },
     });
-  } catch {
+  } catch (err: any) {
+    console.error("Chat error:", err);
     return Response.json(
-      { error: "Upstream service failure: unable to process chat request" },
+      { error: err.message || "Unable to process chat request" },
       { status: 502 },
     );
   }
