@@ -91,9 +91,13 @@ Use this exact structure:
 
 Rules:
 - Positive amounts are income, negative are expenses. If all amounts are positive, treat context clues in descriptions to determine type.
-- Flag transactions that look personal, have vague descriptions, are unusually large, or need documentation.
+- Only flag transactions that are GENUINELY AMBIGUOUS. Do NOT flag transactions where the description clearly indicates the nature:
+  - If the description says "personal" or is an obvious personal expense (Netflix, gym, groceries, personal subscription), mark it as category "Personal", status "clean". No flag needed.
+  - If the description clearly indicates a business expense (office rent, QuickBooks, AWS, business insurance), mark it as the appropriate business category, status "clean". No flag needed.
+  - Only flag when you truly cannot tell from the description whether it is business or personal (e.g. "Best Buy $1200", "Amazon purchase", "Uber", "ATM withdrawal").
+- For flagged items, write a specific clarifying question referencing the actual transaction, not a generic question.
 - Include 3-5 insights that sound like a smart friend reviewing their finances.
-- potentialDeductions = sum of expense amounts that are likely tax-deductible.
+- potentialDeductions = sum of expense amounts that are likely tax-deductible. Do NOT include items categorized as Personal.
 - complianceScore = percentage of transactions that are clean and well-categorized.
 - Return raw JSON only. No explanation text.`;
 
