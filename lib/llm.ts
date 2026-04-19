@@ -1,6 +1,5 @@
-import Groq from "groq-sdk";
-
-const MODEL = "llama-3.3-70b-versatile";
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
+const MODEL = "gemini-2.0-flash";
 
 const FOREIGN_CONTRACTOR_DISCLAIMER =
   "IMPORTANT: If any expenses involve payments to foreign contractors, " +
@@ -47,19 +46,49 @@ export interface AnalysisResult {
   insights: Insight[];
 }
 
-function getClient(): Groq {
-  const apiKey = process.env.GROQ_API_KEY;
+function getApiKey(): string {
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GROQ_API_KEY is not set in environment variables");
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
   }
-  return new Groq({ apiKey });
+  return apiKey;
+}
+
+async function chatCompletion(
+  system: string,
+  userMessage: string,
+  maxTokens = 8192,
+): Promise<string> {
+  const apiKey = getApiKey();
+
+  const res = await fetch(`${GEMINI_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Gemini API error (${res.status}): ${body}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? "";
 }
 
 export async function analyzeExpenses(
   expenseData: ExpenseRecord[],
 ): Promise<AnalysisResult> {
-  const client = getClient();
-
   const system = `You are a financial compliance assistant for US small businesses.
 Analyze each transaction and return ONLY raw JSON (no markdown, no code blocks).
 
@@ -102,19 +131,10 @@ Rules:
 - Return raw JSON only. No explanation text.`;
 
   try {
-    const res = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 8192,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: JSON.stringify(expenseData) },
-      ],
-    });
-
-    const rawText = res.choices[0]?.message?.content ?? "";
+    const rawText = await chatCompletion(system, JSON.stringify(expenseData));
 
     if (!rawText || rawText.trim() === "") {
-      throw new Error("Groq returned empty response");
+      throw new Error("Gemini returned empty response");
     }
 
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
@@ -133,27 +153,17 @@ export async function chatAboutExpenses(
   question: string,
   expenseData: ExpenseRecord[],
 ): Promise<string> {
-  const client = getClient();
-
   const system =
     "You are a helpful financial assistant. The user will provide their " +
     "expense data and ask a question about it. Answer concisely in plain text. " +
     FOREIGN_CONTRACTOR_DISCLAIMER;
 
   try {
-    const res = await client.chat.completions.create({
-      model: MODEL,
-      max_tokens: 4096,
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: `Here are my expenses:\n${JSON.stringify(expenseData, null, 2)}\n\n${question}`,
-        },
-      ],
-    });
-
-    return res.choices[0]?.message?.content ?? "";
+    return await chatCompletion(
+      system,
+      `Here are my expenses:\n${JSON.stringify(expenseData, null, 2)}\n\n${question}`,
+      4096,
+    );
   } catch (error) {
     console.error("chatAboutExpenses failed:", error);
     throw error;

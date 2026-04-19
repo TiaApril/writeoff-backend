@@ -1,4 +1,4 @@
-import { analyzeExpenses } from "@/lib/groq";
+import { analyzeExpenses } from "@/lib/llm";
 import { parseCSV } from "@/lib/csvParser";
 import { searchIRSRule } from "@/lib/tinyfish";
 

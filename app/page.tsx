@@ -10,6 +10,7 @@ import ChatPanel from "./components/ChatPanel";
 import StickyBar from "./components/StickyBar";
 
 import TaxRuleExplorer from "./components/TaxRuleExplorer";
+import VoiceSummary from "./components/VoiceSummary";
 
 interface AnalyzedTransaction {
   date: string;
@@ -246,6 +247,20 @@ export default function Home() {
               potentialDeductions={result.potentialDeductions}
               complianceScore={result.complianceScore}
             />
+
+            {/* Voice summary — powered by ElevenLabs */}
+            <div className="flex items-center justify-between">
+              <VoiceSummary
+                totalIncome={result.totalIncome}
+                totalExpenses={result.totalExpenses}
+                potentialDeductions={result.potentialDeductions}
+                complianceScore={result.complianceScore}
+                flaggedCount={flaggedCount}
+                totalTransactions={result.transactions.length}
+                insights={result.insights}
+              />
+              <span className="text-[10px] text-wo-gray">Voice powered by ElevenLabs</span>
+            </div>
 
             {/* Middle — Transaction table */}
             <TransactionTable

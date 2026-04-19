@@ -1,5 +1,5 @@
-import { chatAboutExpenses } from "@/lib/groq";
-import type { ExpenseRecord } from "@/lib/groq";
+import { chatAboutExpenses } from "@/lib/llm";
+import type { ExpenseRecord } from "@/lib/llm";
 
 export async function POST(request: Request) {
   // Parse body
