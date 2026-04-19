@@ -4,20 +4,22 @@ export interface IRSResult {
   url: string;
 }
 
-export async function searchIRSRule(keyword: string): Promise<IRSResult[]> {
-  const query = `IRS ${keyword} small business deduction 2024`;
+export async function searchIRSRule(keyword: string, raw = false): Promise<IRSResult[]> {
+  const query = raw ? keyword : `IRS ${keyword} small business`;
+  const apiKey = process.env.TINYFISH_API_KEY;
 
   const res = await fetch(
     `https://api.search.tinyfish.ai?query=${encodeURIComponent(query)}&location=US&language=en`,
     {
       headers: {
-        "X-API-Key": process.env.TINYFISH_API_KEY!,
+        "X-API-Key": apiKey!,
       },
     },
   );
 
   if (!res.ok) {
-    console.error("TinyFish search failed:", res.status);
+    const body = await res.text();
+    console.error(`TinyFish search failed: ${res.status} ${res.statusText}`, body);
     return [];
   }
 

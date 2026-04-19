@@ -9,6 +9,8 @@ import InsightsPanel from "./components/InsightsPanel";
 import ChatPanel from "./components/ChatPanel";
 import StickyBar from "./components/StickyBar";
 
+import TaxRuleExplorer from "./components/TaxRuleExplorer";
+
 interface AnalyzedTransaction {
   date: string;
   description: string;
@@ -28,6 +30,8 @@ interface AnalysisResult {
   transactions: AnalyzedTransaction[];
   categories: { name: string; total: number; count: number; color: string }[];
   insights: { text: string; type: "deduction" | "warning" | "tip" | "info" }[];
+  irsReferences?: Record<string, { title: string; snippet: string; url: string }[]>;
+  tinyfishEnabled?: boolean;
 }
 
 export default function Home() {
@@ -252,8 +256,11 @@ export default function Home() {
             {/* Category breakdown + Insights side by side */}
             <div className="grid gap-6 lg:grid-cols-2">
               <CategoryChart categories={result.categories} />
-              <InsightsPanel insights={result.insights} />
+              <InsightsPanel insights={result.insights} irsReferences={result.irsReferences} />
             </div>
+
+            {/* Tax Rule Explorer */}
+            <TaxRuleExplorer />
 
             {/* Chat (toggled by sticky bar) */}
             {showChat && (
